@@ -385,25 +385,68 @@ def get_openai_client():
         st.stop("Missing OpenAI API key.")
 
 
-def generate_chat_title(first_message):
-    words = first_message.split()
-    if len(words) <= 5:
-        return first_message[:40]
-    return " ".join(words[:5]) + "..."
+def generate_chat_title(conversation_context):
+    client = get_openai_client()
+    try:
+        prompt = (
+            "Generate a 2-5 word title for this conversation. "
+            "Be specific and capture the main topic. "
+            "If it's just greetings or too vague, return exactly 'New Chat'. "
+            "No quotes, punctuation, or emojis."
+        )
+
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": conversation_context}
+            ],
+            max_tokens=15,
+            temperature=0
+        )
+
+        title = response.choices[0].message.content.strip()
+        title = ''.join(c for c in title if c.isalnum() or c.isspace())
+
+        if not title or len(title) < 3:
+            return "New Chat"
+
+        if len(title) > 40:
+            title = title[:40]
+
+        return title
+    except Exception as e:
+        return "New Chat"
 
 
 def save_chat_to_firestore(user_id, chat_id, chat_history, title=None):
     try:
+        chat_ref = db.collection("users").document(user_id).collection("chats").document(chat_id)
+        existing_chat = chat_ref.get()
+
+        existing_title = None
+        if existing_chat.exists:
+            existing_title = existing_chat.to_dict().get("title")
+
         if not title:
-            chat_ref = db.collection("users").document(user_id).collection("chats").document(chat_id)
-            existing_chat = chat_ref.get()
+            if existing_title and existing_title != "New Chat":
+                title = existing_title
+            else:
+                user_messages = [msg["content"] for msg in chat_history if msg["role"] == "user"]
+                ai_messages = [msg["content"] for msg in chat_history if msg["role"] == "assistant"]
 
-            if existing_chat.exists:
-                title = existing_chat.to_dict().get("title")
-
-            if not title and chat_history:
-                first_user_msg = next((msg["content"] for msg in chat_history if msg["role"] == "user"), "New Chat")
-                title = generate_chat_title(first_user_msg)
+                if len(user_messages) >= 2 and len(ai_messages) >= 1:
+                    context = f"User: {user_messages[0]}\nAssistant: {ai_messages[0]}\nUser: {user_messages[1]}"
+                    title = generate_chat_title(context)
+                elif len(user_messages) >= 1 and len(ai_messages) >= 1:
+                    first_user = user_messages[0].strip()
+                    if len(first_user.split()) >= 3:
+                        context = f"User: {first_user}\nAssistant: {ai_messages[0]}"
+                        title = generate_chat_title(context)
+                    else:
+                        title = "New Chat"
+                else:
+                    title = "New Chat"
 
         chat_data = {
             "history": chat_history,
@@ -1430,7 +1473,7 @@ elif st.session_state.page == 'password_reset':
                         st.success(
                             "✅ If an account exists with this email, you'll receive a password reset link shortly.")
                         st.info("📬 Check your inbox and spam folder.")
-                        time.sleep(3)
+                        time.sleep(5)
                         st.session_state.page = 'login'
                         st.rerun()
                     else:
@@ -1521,13 +1564,13 @@ elif st.session_state.page == 'verify_email':
             if remaining > 0:
                 st.caption(f"⏳ Wait {remaining} seconds before requesting another code.")
 
-        st.markdown("---")
-        if st.button("← Back to Signup"):
-            st.session_state.page = 'signup'
-            st.session_state.verify_email = None
-            st.session_state.user_id_for_verification = None
-            st.session_state.verification_attempts = 0
-            st.rerun()
+    st.markdown("---")
+    if st.button("← Back to Signup"):
+        st.session_state.page = 'signup'
+        st.session_state.verify_email = None
+        st.session_state.user_id_for_verification = None
+        st.session_state.verification_attempts = 0
+        st.rerun()
 
 # =============================================================================
 # SETTINGS PAGE
@@ -1690,7 +1733,7 @@ elif st.session_state.page == 'settings':
                 st.markdown(f"""
                         <div style='background: rgba(139, 92, 246, 0.1); padding: 20px; border-radius: 12px; border-left: 4px solid #8b5cf6;'>
                             <p style='color: #9ca3af; font-size: 12px; margin: 0;'>USERNAME</p>
-                            <p style='color: #c4b5fd; font-size: 18px; font-weight: 600; margin: 5px 0 0 0;'>{sanitize_for_display(st.session_state.username or 'Anonymous')}</p>
+                            <p style='color: #c4b5fd; font-size: 18px; font-weight: 600; margin: 5px 0 0 0;'>{sanitize_for_display(st.session_state.username.title() or 'Anonymous')}</p>
                         </div>
                         """, unsafe_allow_html=True)
 
