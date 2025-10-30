@@ -990,7 +990,7 @@ with st.sidebar:
 
         if st.button("⭐ View on GitHub", use_container_width=True):
             st.markdown(
-                '<meta http-equiv="refresh" content="0; url=https://github.com/HWebDevL">',
+                '<meta http-equiv="refresh" content="0; url=https://github.com/Ter4byte-lib/python-terabot-ai">',
                 unsafe_allow_html=True
             )
 
@@ -1833,8 +1833,7 @@ elif st.session_state.page == 'settings':
                                 padding: 30px; border-radius: 16px; text-align: center; border: 2px solid rgba(139, 92, 246, 0.3);'>
                         <h2 style='color: #c4b5fd; margin: 0 0 15px 0;'>☕ Buy Me a Coffee</h2>
                         <p style='color: #d1d5db; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;'>
-                            Terabot-AI is a passion project built by one developer. <br>
-                            Your support helps keep the servers running and features coming! 💜
+                            Built by a single developer, Terabot-AI runs on passion (and a little caffeine). 💜 Your support helps keep it alive!
                         </p>
                         <a href="https://ko-fi.com/ter4byte" target="_blank" style="text-decoration: none;">
                             <button style="
@@ -1861,7 +1860,7 @@ elif st.session_state.page == 'settings':
                         <p style='color: #d1d5db; font-size: 14px; line-height: 1.6; margin: 0 0 15px 0;'>
                             Terabot-AI is open source! Check out the code, contribute, or star the repo on GitHub.
                         </p>
-                        <a href="https://github.com/HWebDevL" target="_blank" style="text-decoration: none;">
+                        <a href="https://github.com/Ter4byte-lib/python-terabot-ai" target="_blank" style="text-decoration: none;">
                             <button style="
                                 background: rgba(139, 92, 246, 0.2);
                                 color: #c4b5fd;
