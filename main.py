@@ -317,7 +317,7 @@ st.markdown("""
     }
 
     .element-container:has(#github_attractive_button) + div button::after {
-        content: "⭐ View on GitHub";
+        content: "⭐ Star on GitHub";
         position: absolute;
         bottom: 50%;
         right: 65px;
