@@ -1,7 +1,6 @@
 import streamlit as st
 import time
 import random
-import pyrebase
 from firebase_admin import initialize_app, firestore, credentials, auth
 import firebase_admin
 from openai import OpenAI
@@ -52,21 +51,54 @@ def get_db():
             st.stop()
     return firestore.client()
 
+import requests
+import json
+
+FIREBASE_API_KEY = st.secrets["firebase_web"]["apiKey"]
+
+def firebase_sign_up(email, password):
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_API_KEY}"
+    payload = {
+        "email": email,
+        "password": password,
+        "returnSecureToken": True
+    }
+    response = requests.post(url, json=payload)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        error_data = response.json()
+        raise Exception(error_data.get("error", {}).get("message", "Unknown error"))
+
+def firebase_sign_in(email, password):
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}"
+    payload = {
+        "email": email,
+        "password": password,
+        "returnSecureToken": True
+    }
+    response = requests.post(url, json=payload)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        error_data = response.json()
+        raise Exception(error_data.get("error", {}).get("message", "Unknown error"))
+
+def firebase_send_password_reset(email):
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={FIREBASE_API_KEY}"
+    payload = {
+        "requestType": "PASSWORD_RESET",
+        "email": email
+    }
+    response = requests.post(url, json=payload)
+    if response.status_code == 200:
+        return True
+    else:
+        error_data = response.json()
+        raise Exception(error_data.get("error", {}).get("message", "Unknown error"))
 
 db = get_db()
 
-firebase_web_config = {
-    "apiKey": st.secrets["firebase_web"]["apiKey"],
-    "authDomain": st.secrets["firebase_web"]["authDomain"],
-    "projectId": st.secrets["firebase_web"]["projectId"],
-    "storageBucket": st.secrets["firebase_web"]["storageBucket"],
-    "messagingSenderId": st.secrets["firebase_web"]["messagingSenderId"],
-    "appId": st.secrets["firebase_web"]["appId"],
-    "databaseURL": st.secrets["firebase_web"].get("databaseURL", "")
-}
-
-firebase = pyrebase.initialize_app(firebase_web_config)
-pyrebase_auth = firebase.auth()
 
 # ==============================================================================
 # STYLES
@@ -768,17 +800,15 @@ def check_email_exists_in_firebase(email):
 
 def send_password_reset_email(email):
     try:
-        pyrebase_auth.send_password_reset_email(email)
+        firebase_send_password_reset(email)
         return True, "Password reset email sent! Check your inbox and spam folder."
     except Exception as e:
         error_msg = str(e)
 
-        if "EMAIL_NOT_FOUND" in error_msg or "USER_NOT_FOUND" in error_msg:
+        if "EMAIL_NOT_FOUND" in error_msg:
             return False, "No account found with this email."
         elif "INVALID_EMAIL" in error_msg:
             return False, "Invalid email format."
-        elif "TOO_MANY_ATTEMPTS_TRY_LATER" in error_msg:
-            return False, "Too many requests. Please try again later."
         else:
             return False, f"Error: {error_msg}"
 
@@ -1318,7 +1348,7 @@ elif st.session_state.page == 'signup':
                         try:
                             with st.spinner("Creating account..."):
                                 sanitized_username = sanitize_input(username)
-                                user = pyrebase_auth.create_user_with_email_and_password(email, password)
+                                user = firebase_sign_up(email, password)
                                 auth.update_user(user['localId'], display_name=sanitized_username)
                                 code = generate_verification_code()
 
@@ -1391,7 +1421,7 @@ elif st.session_state.page == 'login':
                 st.warning("Please enter both email and password.")
             else:
                 try:
-                    user = pyrebase_auth.sign_in_with_email_and_password(email, password)
+                    user = firebase_sign_in(email, password)
                     user_record = auth.get_user(user['localId'])
 
                     if not user_record.email_verified:
