@@ -1,7 +1,7 @@
 import streamlit as st
 import time
 import random
-import pyrebase
+import pyrebase4 as pyrebase
 from firebase_admin import initialize_app, firestore, credentials, auth
 import firebase_admin
 from openai import OpenAI
