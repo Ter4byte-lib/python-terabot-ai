@@ -1021,7 +1021,7 @@ if st.session_state.page == 'chat':
         st.markdown('<span id="github_attractive_button"></span>', unsafe_allow_html=True)
         st.markdown(
             """
-            <a href="https://github.com/HWebDevL" target="_blank" style="text-decoration: none;">
+            <a href="https://github.com/Ter4byte-lib/python-terabot-ai" target="_blank" style="text-decoration: none;">
                 <button style="
                     position: fixed;
                     top: 90px;
