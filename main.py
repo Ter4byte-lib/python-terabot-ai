@@ -1,13 +1,12 @@
 import streamlit as st
 import time
 import random
-import pyrebase4 as pyrebase
+import pyrebase
 from firebase_admin import initialize_app, firestore, credentials, auth
 import firebase_admin
 from openai import OpenAI
 import smtplib
 from datetime import datetime, timedelta
-import re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import html
