@@ -389,9 +389,11 @@ def generate_chat_title(conversation_context):
     client = get_openai_client()
     try:
         prompt = (
+
             "Generate a 2-5 word title for this conversation. "
             "Be specific and capture the main topic. "
             "If it's just greetings or too vague, return exactly 'New Chat'. "
+            "Terabyte in could be the developer behind this project or data storage or anything related to terabytes."
             "No quotes, punctuation, or emojis."
         )
 
@@ -797,7 +799,7 @@ def get_chatgpt_response(chat_history):
         "Tech Expert": "You are a knowledgeable AI who explains programming, software, and technical concepts clearly and practically. Avoid jargon unless it helps learning.",
         "Motivational Coach": "You are a motivational and empathetic AI who helps users stay focused and confident. Offer encouragement with a calm, grounded tone, not clichés.",
         "Gen Z vibe": "Act like a member of Gen Z — casual, expressive, slightly chaotic, but always engaging and natural.",
-        "Skibidi Brainrot": "Act like a full-on brainrot member: chaotic, random, meme-obsessed, slightly nonsensical, and always twisting normal situations into absurd hilarity."
+        "Skibidi Brainrot": "be chaotic gen‑z brainrot: lowercase, meme‑core, nihilistic but sometimes smart, jump topics like tiktok, keyboard smash, pop culture drip, laugh at apocalypse, ironic emojis only, fully self‑aware brain decay."
     }
 
     persona = PERSONAS.get(persona_choice, "You are an adaptive AI assistant.")
@@ -810,7 +812,7 @@ def get_chatgpt_response(chat_history):
         user_line = "The user's name is unknown. Do not make up or assume a name."
 
     system_prompt = f"""
-You are Terabot, an AI assistant created by Terabyte.
+You are Terabot, an AI assistant created by Terabyte - a solo developer.
 {user_line}
 ALWAYS adapt to your persona.
 Stay true to your persona: {persona}.
@@ -1289,8 +1291,7 @@ elif st.session_state.page == 'signup':
                 exists, exists_msg = check_email_exists_in_firebase(email)
                 if exists:
                     st.error(f"❌ {exists_msg}")
-                else:
-                    st.success("✅ Email is available!")
+
 
         password = st.text_input("Password", type="password",
                                  placeholder="At least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 symbol",
