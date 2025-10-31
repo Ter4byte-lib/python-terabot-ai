@@ -1020,7 +1020,7 @@ with st.sidebar:
         st.info("🎓 Built by a student developer — simple, secure, and free to use.")
         st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
 
-        if st.button("⭐ View on GitHub", use_container_width=True):
+        if st.button("⭐ Star on GitHub", use_container_width=True):
             st.markdown(
                 '<meta http-equiv="refresh" content="0; url=https://github.com/Ter4byte-lib/python-terabot-ai">',
                 unsafe_allow_html=True
