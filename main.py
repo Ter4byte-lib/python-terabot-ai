@@ -1902,7 +1902,7 @@ elif st.session_state.page == 'settings':
                                 border-radius: 8px;
                                 cursor: pointer;
                                 transition: all 0.2s ease;
-                            ">⭐ View on GitHub</button>
+                            ">⭐Star on GitHub</button>
                         </a>
                     </div>
                     """, unsafe_allow_html=True)
