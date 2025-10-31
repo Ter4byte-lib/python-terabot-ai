@@ -10,7 +10,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import html
 from email_validator import validate_email, EmailNotValidError
-
+import requests
+import json
 
 # =============================================================================
 # SECURITY & UTILITIES
@@ -40,19 +41,19 @@ def clean_chat_for_storage(chat_history):
 # FIREBASE INITIALIZATION
 # =============================================================================
 
+import json
+
 def get_db():
     if not firebase_admin._apps:
         try:
-            firebase_config_dict = dict(st.secrets["firebase"])
-            creds = credentials.Certificate(firebase_config_dict)
+            cred_json = json.loads(st.secrets["firebase"]["credentials_json"])
+            creds = credentials.Certificate(cred_json)
             initialize_app(creds)
         except Exception as e:
             st.error(f"Failed to initialize Firebase: {e}")
             st.stop()
     return firestore.client()
 
-import requests
-import json
 
 FIREBASE_API_KEY = st.secrets["firebase_web"]["apiKey"]
 
