@@ -1,116 +1,93 @@
-# 🤖 Terabot-AI
+# Terabot-AI
 
-> An advanced, multi-persona AI chatbot workspace featuring secure out-of-band authentication, multi-tenant data isolation, and persistent conversation management.
+A personal AI chatbot web app built to handle the real-world engineering challenges of a multi-user platform—like secure auth, data isolation, and persistent session states.
 
 **🔗 Live Demo:** https://terabot-ai.streamlit.app/  
 **📅 Built:** Summer 2025
 
 ---
 
-## 📝 What It Does
+## What It Does
 
-**Terabot-AI** is a personal AI chatbot web application built with **Streamlit**, **Firebase**, and the **OpenAI API**. It allows users to create authenticated accounts, manage independent conversation threads, and customize how the AI responds through reusable personas.
+Instead of just building another basic wrapper around an LLM API, I wanted to focus on what it takes to build a secure, production-style platform for multiple users. 
 
-Rather than acting as a simple interface over an LLM, the project focuses on the engineering challenges involved in building a production-style multi-user platform. It implements a custom out-of-band email verification workflow, user-isolated Firestore data structures, dynamic persona management, and a secure multi-stage account deletion process.
-
----
-
-## 🛠️ Tech Stack
-
-- **Frontend & Framework:** `Streamlit` (Python)
-- **Authentication:** `Firebase Authentication`
-- **Database & Storage:** `Cloud Firestore`
-- **Backend SDK:** `firebase-admin`
-- **AI Integration:** `OpenAI API` (Chat Completions & Moderation)
-- **Email Delivery:** `Gmail SMTP`
-- **Hosting:** `Streamlit Community Cloud`
+**Terabot-AI** lets users sign up, verify their emails, manage completely independent chat threads, and build their own custom AI personas. Under the hood, it handles the messy stuff: a custom out-of-band email verification system, isolated user data in Firestore, dynamic chat contexts, and a multi-stage account deletion process.
 
 ---
 
-## ✨ Features
+## Tech Stack
 
-### 🔐 Gated Email Verification
+* **Frontend & Framework:** Streamlit (Python)
+* **Authentication:** Firebase Authentication
+* **Database & Storage:** Cloud Firestore
+* **Backend SDK:** firebase-admin
+* **AI Integration:** OpenAI API (Chat Completions & Moderation)
+* **Email Delivery:** Gmail SMTP
+* **Hosting:** Streamlit Community Cloud
 
+---
+
+## Features
+
+### 🔐 Email Verification
 <p align="center">
   <img src="assets/login.png" width="700"/>
 </p>
+To keep spam down and protect my API keys, new accounts have to enter a time-sensitive, 6-digit verification code sent to their email before they can log in.
 
-New accounts require a time-sensitive six-digit verification code delivered by email before activation, reducing spam registrations and protecting server resources.
-
-### 💬 Dynamic Conversation Workspaces
-
+### 💬 Multi-Thread Workspaces
 <p align="center">
   <img src="assets/chat.png" width="700"/>
 </p>
+Users can run multiple independent chat threads at the same time. The app keeps the conversations completely separate so contexts never get mixed up.
 
-Conversation threads are stored independently, allowing users to switch between multiple discussions without mixing conversational context.
-
-### 🎭 Custom Persona Engine
-
+### 🎭 Custom AI Personas
 <p align="center">
   <img src="assets/persona.png" width="700"/>
 </p>
+Users can create and save reusable personas by writing custom system instructions (like a dedicated coding assistant or a harsh writing critic). 
 
-Users can create, edit, and save reusable AI personas by defining custom system instructions for different use cases, such as coding assistance, writing feedback, or general conversation.
+### 🔄 On-the-Fly Persona Switching
+You can swap personas right in the middle of a live chat thread without wiping the page, clearing the history, or breaking the current session state.
 
-### 🔄 Live Persona Switching
-
-Personas can be swapped during an active conversation without resetting the interface, clearing chat history, or disrupting the current session state.
-
-### 🗑️ Secure Account Deletion
-
-A protected **Danger Zone** requires explicit text confirmation before permanently deleting authentication records and associated Firestore data.
+### 🗑️ The Danger Zone (Account Deletion)
+To prevent accidental clicks, deleting an account requires the user to type out an explicit text confirmation before the app wipes their auth records and Firestore data for good.
 
 ---
 
-## 🔒 Security Considerations & Technical Reflection
+## Security & Technical Choices
 
-### Credential Handling
-
-- **Safe Secrets Management:** OpenAI keys, Firebase service credentials, and Gmail SMTP passwords are stored outside the repository and injected securely at runtime using Streamlit's `st.secrets` mechanism.
-
-- **Repository Safety:** Local configuration files containing sensitive information are excluded through a strict `.gitignore` policy to prevent accidental commits.
+### Handling Credentials
+* **Secrets Management:** Sensitive stuff like OpenAI keys, Firebase credentials, and SMTP passwords are completely kept out of the codebase. Everything is injected at runtime using Streamlit's `st.secrets` manager.
+* **Git Practices:** A strict `.gitignore` setup ensures no local config files or API keys ever accidentally get pushed to GitHub.
 
 ### Access Control & Data Isolation
+* **Server-Side Security:** I used the `firebase-admin` SDK strictly on the backend rather than exposing database controls to the client side. Every single database query is locked to the active `session_user_id` so users can only ever see their own data.
+* **Rate Limiting & Abuse Prevention:** Unregistered guest accounts are cut off after 6 messages. To prevent users from spamming the API, authenticated users are limited to one active prompt at a time; hitting enter while the AI is still generating will trigger a simple "please wait" block.
 
-- **Server-Side Authorization:** The application uses the `firebase-admin` SDK from the backend rather than exposing client-side administrative access. All database operations are scoped to the authenticated `session_user_id`, ensuring users can only access their own data through the application.
-
-- **Usage Controls:** Guest accounts are limited to six messages to reduce abuse and protect API usage. Authenticated users are restricted to one in-flight AI request at a time; submitting another prompt before the previous response completes displays a **"please wait"** notice. Once a response completes, there is currently no additional per-minute or per-hour request limit.
-
-### Input Validation & Security
-
-- **XSS Mitigation:** User-controlled values such as usernames, persona titles, and prompt fields are sanitized using `html.escape()` before being rendered inside markdown blocks that allow HTML (`unsafe_allow_html=True`).
-
-- **Moderation Coverage:** Custom persona instructions are validated through OpenAI's Moderation API before being stored. Standard chat messages currently rely on the underlying model's built-in safety systems rather than an additional moderation pass.
-
-- **Exception Handling:** Some development-stage exception handlers currently expose raw Python errors through `st.error(f"... failed: {e}")`. While useful during debugging, these should be replaced with generic user-facing messages backed by structured server-side logging in production.
+### Input Validation
+* **XSS Protection:** Because I use `unsafe_allow_html=True` to render Markdown cleanly, I pass user inputs (usernames, persona titles, and prompts) through `html.escape()` first to stop cross-site scripting.
+* **Safety Filters:** Custom system instructions are automatically screened through OpenAI’s Moderation API before they get saved to the database. 
 
 ---
 
-## 🧠 What I Learned
+## What I Learned (The Hard Way)
 
-### Managing Streamlit's Execution Model
+### Taming Streamlit's Execution Model
+Streamlit reruns the *entire* Python script from top to bottom every single time a user clicks a button or types a message. This drove me crazy at first. I had to learn how to heavily rely on `st.session_state` to make sure authentication states, chat logs, and active personas didn't instantly wipe themselves on a page refresh.
 
-I learned how Streamlit's execution model works in practice, especially how the entire script reruns on every interaction. This required careful use of `st.session_state` to manage authentication state, chat history, and persona configurations.
+### Backend vs. Client Auth
+Working with the `firebase-admin` SDK taught me how to use a backend administrative layer to securely handle tasks like generating verification codes and deleting user data without exposing administrative privileges to the frontend.
 
-### Backend Authorization
-
-I worked with the `firebase-admin` SDK to understand how server-side authentication can act as a control layer for database access and verification workflows.
-
-### NoSQL Data Modelling
-
-Designing the Firestore structure helped me understand how to model NoSQL data for multi-user systems, especially when handling nested conversation and persona data while keeping strict separation between accounts.
-
-### Secure Credential Management
-
-This project reinforced the importance of secure credential handling, particularly separating sensitive keys from source code and injecting them securely at runtime.
+### NoSQL Data Modeling
+Designing the Firestore structure was a great lesson in NoSQL design. I had to map out a nested structure (`users -> conversations -> messages`) that allowed for fast queries while ensuring complete data isolation between accounts.
 
 ---
 
-## 🚀 Future Improvements
+## What's Next
 
-- [ ] Route live chat messages through the OpenAI Moderation API for consistent content filtering.
-- [ ] Replace raw exception output with user-friendly error messages backed by structured server-side logging.
-- [ ] Introduce stricter regex-based validation for usernames before database insertion.
-- [ ] Implement configurable per-user request quotas and rate limits to better protect API resources as usage grows.
-- [ ] Expand automated testing around authentication, verification, and account lifecycle workflows.
+- [ ] Run live chat messages through the OpenAI Moderation API for consistent content filtering.
+- [ ] Swap out raw Python error messages (`st.error(f"... failed: {e}")`) with clean user-facing alerts and proper backend logging.
+- [ ] Add strict regex validation for usernames to stop weird characters from breaking database entries.
+- [ ] Implement actual per-user request quotas to protect API costs as usage grows.
+- [ ] Write automated tests for the login, verification, and deletion lifecycles.
