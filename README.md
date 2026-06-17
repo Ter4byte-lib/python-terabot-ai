@@ -1,70 +1,88 @@
 # 🤖 Terabot-AI
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://terabot-ai.streamlit.app/)
+> An advanced, multi-persona AI chatbot workspace featuring secure out-of-band authentication, multi-tenant data isolation, and persistent conversation management.
 
-> A sleek, multi-persona AI chatbot workspace featuring secure out-of-band authentication, multi-tenant state separation, and dynamic conversation tracking.
-
-**🔗 Live Link:** [https://terabot-ai.streamlit.app/](https://terabot-ai.streamlit.app/)  
+**🔗 Live Demo:** [https://terabot-ai.streamlit.app/](https://terabot-ai.streamlit.app/)  
 **📅 Built:** Summer 2025
 
 ---
 
 ## 📝 What It Does
 
-**Terabot-AI** is a personal AI chatbot web app where users can create an account, manage different conversation threads, and fully customize how the AI responds to them. 
+**Terabot-AI** is a personal AI chatbot web application built with Streamlit, Firebase, and the OpenAI API. It allows users to create authenticated accounts, manage independent conversation threads, and customize how the AI responds through reusable personas.
 
-Instead of just building a simple API wrapper, I wanted to push this project further. It handles the full user journey: signups gated by a custom email verification pipeline, strict data structures to keep different users' chat histories completely locked down, an interactive backend persona builder, and a secure multi-stage account purge.
+Rather than functioning as a simple interface over an LLM, the project focuses on the engineering challenges involved in building a production-style multi-user platform. It implements a custom out-of-band email verification workflow, user-isolated Firestore data structures, dynamic persona management, and a secure multi-stage account deletion process.
 
 ---
 
 ## 🛠️ Tech Stack
 
 * **Frontend & Framework:** `Streamlit` (Python)
-* **Authentication:** `Firebase Authentication` (handled via backend workflows)
-* **Database & Storage:** `Cloud Firestore` (managed via the `firebase-admin` Python SDK)
-* **AI Core:** `OpenAI API` (using Chat Completions and Moderation endpoints)
-* **Email Delivery:** `Gmail SMTP` (for formatting and sending dynamic HTML verification templates)
-* **Hosting Platform:** `Streamlit Community Cloud`
+* **Authentication:** `Firebase Authentication`
+* **Database & Storage:** `Cloud Firestore`
+* **Backend SDK:** `firebase-admin`
+* **AI Integration:** `OpenAI API` (Chat Completions & Moderation)
+* **Email Delivery:** `Gmail SMTP`
+* **Hosting:** `Streamlit Community Cloud`
 
 ---
 
 ## ✨ Key Features
 
-* **Gated Verification Pipeline:** Keeps the app secure and stops spam signups by requiring users to input a time-sensitive, 6-digit verification pin sent straight to their inbox before they can use their account.
-* **Smart Dynamic Workspaces:** Saves and organizes independent chat histories on the fly, making it easy to swap back and forth between completely different conversation topics.
-* **Custom Persona Engine:** A dedicated workspace tab where users can build, store, and edit custom AI profiles (like a code helper, a writing critic, or a casual friend) using specific system instructions.
-* **On-The-Fly Hot Swapping:** Users can switch the AI's persona right in the middle of a chat without breaking the conversation layout, wiping the history, or disrupting the active UI state.
-* **Atomic Data Deletion:** A secure "Danger Zone" module that forces users to re-enter their password before completely wiping their footprint across Firestore (chats, configurations, access codes) and Firebase Auth.
+### 🔐 Gated Email Verification
+New accounts require a time-sensitive six-digit verification code delivered by email before activation, reducing spam registrations and protecting server resources.
+
+### 💬 Dynamic Conversation Workspaces
+Conversation threads are stored independently, allowing users to switch between multiple discussions without mixing conversational context.
+
+### 🎭 Custom Persona Engine
+Users can create, edit, and save reusable AI personas by defining custom system instructions for different use cases, such as coding assistance, writing feedback, or general conversation.
+
+### 🔄 Live Persona Switching
+Personas can be swapped during an active conversation without resetting the interface, clearing chat history, or disrupting the current session state.
+
+### 🗑️ Secure Account Deletion
+A protected Danger Zone requires explicit text confirmation before permanently deleting authentication records and associated Firestore data.
 
 ---
 
-## 🧠 What I Learned Building It
-
-* **Battling Linear Execution Flows:** Streamlit re-runs your entire script from top to bottom every single time a user clicks a button or types text. Figuring out how to handle async-style logic—like maintaining separate chat tabs, keeping users logged in, and saving persona configurations across script re-runs—really forced me to master `st.session_state`.
-* **Backend Security & SDKs:** Working with the `firebase-admin` SDK taught me how a backend actually acts as the gatekeeper. I had to learn how to securely handle service account keys, structure verification routines, and keep database queries secure.
-* **Structured NoSQL Modeling:** Since everything is stored in Firestore, I had to map out a clean data schema to keep user metadata, custom system prompt templates, and deeply nested chat threads organized without any risk of data overlapping between accounts.
-
----
-
-## 🔒 Technical Reflection & Code Hardening
+## 🔒 Security Considerations & Technical Reflection
 
 ### Credential Handling
-* **Safe Secrets Management:** Every single API key and token (OpenAI keys, Firebase service certificates, Gmail SMTP passwords) is completely separated from the code. They are stored safely and injected at runtime using Streamlit’s native `st.secrets` vault.
-* **Repository Safety:** The repo uses strict local environment rules and a solid `.gitignore` setup, making sure local testing files or `secrets.toml` payloads are never accidentally pushed to GitHub history.
+* **Safe Secrets Management:** OpenAI keys, Firebase service credentials, and Gmail SMTP passwords are stored outside the repository and injected securely at runtime using Streamlit's `st.secrets` mechanism.
+* **Repository Safety:** Local configuration files containing sensitive information are excluded through a strict `.gitignore` policy to prevent accidental commits.
 
-### Access Rules & Permissions
-* **Server-Side Data Isolation:** Because the app uses the server-side Firebase Admin SDK instead of client-side queries, security doesn't rely on loose database rules. The Python backend programmatically locks every single read/write path to a validated `session_user_id`. It is structurally impossible for User A to fetch or change User B's files.
-* **Rate Limits and Cost Exposure:** The app includes a 6-message ceiling to limit anonymous guest traffic and protect my OpenAI credit limits from bots. Logged-in profiles have a message frequency framework to moderate usage, along with an active 1,000-character input cap per prompt.
+### Access Control & Data Isolation
+* **Server-Side Authorization:** The application uses the `firebase-admin` SDK from the backend rather than exposing client-side administrative access. All database operations are scoped to the authenticated `session_user_id`, ensuring users can only access their own data through the application.
+* **Usage Controls:** Guest accounts are limited to six messages to reduce abuse and protect API usage. Authenticated users are restricted to one in-flight AI request at a time; submitting another prompt before the previous response completes displays a "please wait" notice. Once a response has finished, there is currently no additional per-minute or per-hour request limit.
 
-### Input Validation & Safety Gaps
-* **XSS Defenses:** The code applies `html.escape()` sanitization universally across user fields (like prompt boxes, username updates, and persona titles) before displaying them inside any markdown blocks that allow HTML formatting (`unsafe_allow_html=True`). This cuts off cross-site scripting risks.
-* **Asymmetric Content Safety:** The persona creator runs custom background instructions through OpenAI's moderation endpoint before saving them to the database. However, regular live chat messages don't pass through this extra filter, meaning the main chat box relies entirely on the underlying model's built-in guardrails.
-* **Error Handling Leaks:** A few catch blocks stream raw Python exceptions straight onto the UI (`st.error(f"... failed: {e}")`). While this made debugging a lot faster during development, it can leak technical backend traces to the front end and should be refactored to show clean, friendly error messages instead.
+### Input Validation & Security
+* **XSS Mitigation:** User-controlled values such as usernames, persona titles, and prompt fields are sanitized using `html.escape()` before being rendered inside markdown blocks that allow HTML (`unsafe_allow_html=True`).
+* **Moderation Coverage:** Custom persona instructions are validated through OpenAI's Moderation API before being stored. Standard chat messages currently rely on the underlying model's built-in safety systems rather than an additional moderation pass.
+* **Exception Handling:** Some development-stage exception handlers currently expose raw Python errors through `st.error(f"... failed: {e}")`. While useful during debugging, these should be replaced with generic user-facing messages backed by structured server-side logging in production.
 
 ---
 
-## 🚀 Next Steps
+## 🧠 What I Learned
 
-* [ ] **Unify Prompt Moderation:** Route real-time chat text through the moderation API block to align the core interface with the standard used in the persona-creation module.
-* [ ] **Abstract Exception Interfaces:** Refactor user-facing error logs to display clean, generic messages while preserving technical stack details exclusively for backend tracing.
-* [ ] **Regex Registration Boundaries:** Implement rigid character checks across username components to handle structural clean-up before variables arrive at database management functions.
+### Managing Streamlit's Execution Model
+Because Streamlit reruns the entire script on every interaction, maintaining authentication state, multiple chat workspaces, and persona configurations required careful use of `st.session_state`.
+
+### Backend Authorization
+Working with the `firebase-admin` SDK provided practical experience implementing server-side authentication workflows, verification logic, and controlled access to Firestore resources.
+
+### NoSQL Data Modelling
+Building a scalable multi-user application required designing Firestore collections capable of storing user profiles, persona configurations, and nested chat histories while maintaining clear separation between accounts.
+
+### Secure Credential Management
+The project reinforced best practices around separating secrets from source code and securely injecting credentials at runtime rather than embedding them directly into the application.
+
+---
+
+## 🚀 Future Improvements
+
+- [ ] Route live chat messages through the OpenAI Moderation API for consistent content filtering.
+- [ ] Replace raw exception output with user-friendly error messages backed by structured server-side logging.
+- [ ] Introduce stricter regex-based validation for usernames before database insertion.
+- [ ] Implement configurable per-user request quotas and rate limits to better protect API resources and support future scaling.
+- [ ] Expand automated testing around authentication, verification, and account lifecycle workflows.
