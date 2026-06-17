@@ -11,7 +11,7 @@
 
 ## 📝 What It Does
 
-**Terabot-AI** is a personal AI chatbot web application that allows users to create authenticated accounts, manage distinct conversation threads, and fully customize how the AI assistant responds to them. 
+Terabot-AI is a personal AI chatbot web application, built with Streamlit, Firebase, and the OpenAI API. It allows users to create authenticated accounts, manage distinct conversation threads, and fully customize how the AI assistant responds to them.
 
 The project goes beyond a simple chat wrapper by implementing a custom out-of-band email verification system for signups, complex NoSQL data architectures to keep user profiles completely separated, an interactive persona-creation suite, and an atomic multi-stage profile deletion workflow.
 
