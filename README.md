@@ -30,12 +30,21 @@ Rather than functioning as a simple interface over an LLM, the project focuses o
 ## ✨ Key Features
 
 ### 🔐 Gated Email Verification
+<p align="center">
+  <img src="assets/login.png" width="700"/>
+</p>
 New accounts require a time-sensitive six-digit verification code delivered by email before activation, reducing spam registrations and protecting server resources.
 
 ### 💬 Dynamic Conversation Workspaces
+<p align="center">
+  <img src="assets/chat.png" width="700"/>
+</p>
 Conversation threads are stored independently, allowing users to switch between multiple discussions without mixing conversational context.
 
 ### 🎭 Custom Persona Engine
+<p align="center">
+  <img src="assets/persona.png" width="700"/>
+</p>
 Users can create, edit, and save reusable AI personas by defining custom system instructions for different use cases, such as coding assistance, writing feedback, or general conversation.
 
 ### 🔄 Live Persona Switching
@@ -66,16 +75,17 @@ A protected Danger Zone requires explicit text confirmation before permanently d
 ## 🧠 What I Learned
 
 ### Managing Streamlit's Execution Model
-Because Streamlit reruns the entire script on every interaction, maintaining authentication state, multiple chat workspaces, and persona configurations required careful use of `st.session_state`.
+I learned how Streamlit’s execution model works in practice, especially how the entire script reruns on every interaction. This required careful use of `st.session_state` to manage authentication state, chat history, and persona configurations.
 
 ### Backend Authorization
-Working with the `firebase-admin` SDK provided practical experience implementing server-side authentication workflows, verification logic, and controlled access to Firestore resources.
+Designing the Firestore structure helped me understand how to model NoSQL data for multi-user systems, especially when handling nested conversation and persona data while keeping strict separation between accounts.
 
 ### NoSQL Data Modelling
-Building a scalable multi-user application required designing Firestore collections capable of storing user profiles, persona configurations, and nested chat histories while maintaining clear separation between accounts.
+I worked with the `firebase-admin` SDK to understand how server-side authentication can act as a control layer for database access and verification workflows.
 
 ### Secure Credential Management
-The project reinforced best practices around separating secrets from source code and securely injecting credentials at runtime rather than embedding them directly into the application.
+This project also reinforced the importance of secure credential handling, particularly separating sensitive keys from source code and injecting them at runtime.
+
 
 ---
 
