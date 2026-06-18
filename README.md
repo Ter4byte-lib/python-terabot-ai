@@ -71,7 +71,7 @@ To prevent accidental clicks, deleting an account requires the user to type out 
 
 ---
 
-## What I Learned (The Hard Way)
+## What I Learned
 
 ### Taming Streamlit's Execution Model
 Streamlit reruns the *entire* Python script from top to bottom every single time a user clicks a button or types a message. This drove me crazy at first. I had to learn how to heavily rely on `st.session_state` to make sure authentication states, chat logs, and active personas didn't instantly wipe themselves on a page refresh.
